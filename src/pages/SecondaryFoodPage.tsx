@@ -1,23 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { Search, AlertCircle, Utensils, WifiOff, Plus, Ruler, ChefHat } from "lucide-react";
+import { Search, AlertCircle, Utensils, WifiOff, Plus, Edit, Trash2, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { fetchFoodPage, PaginatedFood, FoodItem } from "../lib/api";
-import { searchFoods } from "../api/foods";
-import { DEFAULT_LIMIT } from "../constants/endpoints";
-import FoodCard from "../components/FoodCard";
-import PaginationButtons from "../components/PaginationButtons";
-import { AddFoodModal } from "../components/AddFoodModal";
+import { useSearchParams } from "react-router-dom";
+import { fetchSecondaryFood } from "../api/secondaryFood";
 import { UnifiedHeader } from "../components/ui/UnifiedHeader";
 import { useAuth } from "../contexts/AuthContext";
+import { useAuthStore } from "../store/AuthStore";
+import PaginationButtons from "../components/PaginationButtons";
+import { DEFAULT_LIMIT } from "../constants/endpoints";
+import type { SecondaryFood } from "../types/secondaryFood";
 
-export const FoodListScreen: React.FC = () => {
-  const { loading: authLoading, token } = useAuth();
-  const navigate = useNavigate();
+// Mock pagination for secondary food since the API doesn't support it yet
+const mockPaginatedSecondaryFood = (data: SecondaryFood[], page: number, limit: number) => {
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  return {
+    count: data.length,
+    next: endIndex < data.length ? `page-${page + 1}` : null,
+    previous: page > 1 ? `page-${page - 1}` : null,
+    result: data.slice(startIndex, endIndex),
+  };
+};
+
+export const SecondaryFoodPage: React.FC = () => {
+  const { loading: authLoading } = useAuth();
+  const { user: authStoreUser } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  // Check if user is super admin (Admin role)
+  const isSuperAdmin = authStoreUser?.role === "Admin";
 
   // Get search query and page from URL parameters
   const searchQuery = searchParams.get("search") || "";
@@ -29,39 +43,19 @@ export const FoodListScreen: React.FC = () => {
   }, [searchQuery]);
 
   // Use React Query for data fetching
-  const { data, isFetching, isError, error } = useQuery({
-    queryKey: ["foods", searchQuery, page],
-    queryFn: async (): Promise<PaginatedFood> => {
-      if (searchQuery.trim()) {
-        // Use backend search
-        const searchResult = await searchFoods(
-          searchQuery,
-          page,
-          DEFAULT_LIMIT,
-        );
-        // Convert Paginated<FoodItem> to PaginatedFood format
-        return {
-          count: searchResult.count,
-          next: searchResult.next || undefined,
-          previous: searchResult.previous || undefined,
-          result: searchResult.results,
-        };
-      } else {
-        // Use regular food list endpoint
-        const offset = (page - 1) * DEFAULT_LIMIT;
-        const response = await fetchFoodPage(
-          `/v1/resources/food_list?limit=${DEFAULT_LIMIT}&offset=${offset}`,
-        );
-        return response.data;
-      }
-    },
-    enabled: !authLoading, // Only run when auth is ready
-    placeholderData: (previousData) => previousData,
-    staleTime: 5000,
+  const { data: allSecondaryFood, isFetching, isError, error } = useQuery({
+    queryKey: ["secondaryFood"],
+    queryFn: fetchSecondaryFood,
+    enabled: !authLoading,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Check if we're using mock data
-  const usingMockData = data && data.count <= 10;
+  // Filter and paginate data
+  const filteredData = allSecondaryFood?.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const paginatedData = mockPaginatedSecondaryFood(filteredData, page, DEFAULT_LIMIT);
 
   // Update URL search parameters
   const updateSearchParams = (
@@ -107,7 +101,7 @@ export const FoodListScreen: React.FC = () => {
   };
 
   // Handle pagination
-  const totalPages = Math.ceil((data?.count || 0) / DEFAULT_LIMIT);
+  const totalPages = Math.ceil((paginatedData.count || 0) / DEFAULT_LIMIT);
   const hasNext = page < totalPages;
   const hasPrev = page > 1;
 
@@ -123,24 +117,16 @@ export const FoodListScreen: React.FC = () => {
     updateSearchParams({ page: newPage });
   };
 
-  // Loading state - show loading if auth is loading OR if we're loading food data initially
-  if (authLoading || (isFetching && !data)) {
+  // Loading state
+  if (authLoading || (isFetching && !allSecondaryFood)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-500 via-fuchsia-600 to-indigo-600">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col items-center justify-center min-h-96 text-white">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
             <p className="text-white/80">
-              {authLoading
-                ? "Initializing authentication..."
-                : "Loading food data..."}
+              {authLoading ? "Initializing authentication..." : "Loading secondary food..."}
             </p>
-            {import.meta.env.DEV && (
-              <div className="mt-4 text-xs text-white/60 text-center">
-                <div>Auth Loading: {authLoading ? "Yes" : "No"}</div>
-                <div>Token: {token ? `${token.slice(0, 8)}...` : "none"}</div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -148,7 +134,7 @@ export const FoodListScreen: React.FC = () => {
   }
 
   // Error state
-  if (isError && !data) {
+  if (isError && !allSecondaryFood) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-500 via-fuchsia-600 to-indigo-600">
         <div className="container mx-auto px-4 py-8">
@@ -158,7 +144,7 @@ export const FoodListScreen: React.FC = () => {
             <p className="text-white/80 text-center mb-4">
               {(error as any)?.response?.status === 401
                 ? "Authentication required. Please log in again."
-                : "Failed to load food data. Please try again."}
+                : "Failed to load secondary food data. Please try again."}
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -172,52 +158,33 @@ export const FoodListScreen: React.FC = () => {
     );
   }
 
-  const foodItems = data?.result || [];
+  const secondaryFoodItems = paginatedData.result || [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Unified Header */}
       <UnifiedHeader
-        title="Food Database"
-        description={
-          usingMockData
-            ? "Showing sample nutrition data (API connection unavailable)"
-            : "Explore our comprehensive nutrition database"
-        }
+        title="Secondary Food Database"
+        description="Manage secondary food items and categories"
         searchValue={query}
         onSearchChange={setQuery}
         onSearchKeyPress={handleSearchKeyPress}
-        searchPlaceholder="Search foods…"
+        searchPlaceholder="Search secondary food…"
         isSearching={searchLoading}
         showSearchButton={true}
         showClearButton={true}
         onSearchSubmit={handleSearch}
         onClear={handleClearSearch}
-        showDemoData={usingMockData}
         actionButtons={
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/units")}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <Ruler size={20} />
-              Units
-            </button>
-            <button
-              onClick={() => navigate("/secondary-food")}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <ChefHat size={20} />
-              Secondary Food
-            </button>
+          isSuperAdmin && (
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
             >
               <Plus size={20} />
-              Add Food
+              Add Secondary Food
             </button>
-          </div>
+          )
         }
       />
 
@@ -227,44 +194,70 @@ export const FoodListScreen: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">
             {searchQuery ? (
               <>
-                Showing {foodItems.length} of {data?.count || 0} results for "
+                Showing {secondaryFoodItems.length} of {paginatedData.count || 0} results for "
                 {searchQuery}"
               </>
             ) : (
               <>
-                Showing {(page - 1) * DEFAULT_LIMIT + 1} of {data?.count || 0}{" "}
-                foods
+                Showing {(page - 1) * DEFAULT_LIMIT + 1} of {paginatedData.count || 0}{" "}
+                secondary food items
               </>
             )}
           </p>
         </div>
 
-        {/* Food Grid */}
-        {foodItems.length === 0 ? (
+        {/* Secondary Food Grid */}
+        {secondaryFoodItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Utensils
               size={64}
               className="text-gray-300 dark:text-gray-600 mb-4"
             />
             <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">
-              {searchQuery ? "No foods found" : "No foods available"}
+              {searchQuery ? "No secondary food found" : "No secondary food available"}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-center">
               {searchQuery
-                ? `No foods match "${searchQuery}". Try a different search term.`
-                : "The food database is currently empty."}
+                ? `No secondary food items match "${searchQuery}". Try a different search term.`
+                : "The secondary food database is currently empty."}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {foodItems.map((food) => (
-              <FoodCard key={food.id} item={food} />
+            {secondaryFoodItems.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-soft border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  {item.icon && (
+                    <div className="ml-4">
+                      <img
+                        src={item.icon}
+                        alt={item.title}
+                        className="w-12 h-12 rounded-lg object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {item.title}
+                  </h3>
+                </div>
+
+
+              </div>
             ))}
           </div>
         )}
 
         {/* Loading indicator for pagination */}
-        {isFetching && data && (
+        {isFetching && allSecondaryFood && (
           <div className="flex justify-center mt-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           </div>
@@ -294,11 +287,27 @@ export const FoodListScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Add Food Modal */}
-      <AddFoodModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-      />
+      {/* Add Secondary Food Modal - Placeholder for future implementation */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Add New Secondary Food
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              This feature is coming soon. You'll be able to add new secondary food items here.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}; 

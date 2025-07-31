@@ -19,7 +19,7 @@ export const TRAINER_LIST_PATH = "/v1/user/trainer-list";
 export const USER_LIST_PATH = "/v1/user/list/";
 
 //---------------------------------------------------------
-export const SECONDARY_FOOD_ENDPOINT = "/v1/resources/secondary_food?limit=300";
+export const SECONDARY_FOOD_ENDPOINT = "/v1/resources/secondary_foods?limit=300";
 export const UNITS_ENDPOINT = "/v1/resources/units?limit=300";
 export const MAP_CACHE_STALE_MS = 1000 * 60 * 60; // 1 hour
 //---------------------------------------------------------

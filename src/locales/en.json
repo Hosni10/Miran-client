@@ -1,8 +1,10 @@
 {
   "nav": {
     "overview": "Overview",
-    "users": "Users", 
+    "users": "Users",
     "nutrition": "Food",
+    "units": "Units",
+    "secondaryFood": "Secondary Food",
     "recipes": "Recipes",
     "workouts": "Workouts",
     "programs": "Programs",
@@ -78,7 +80,7 @@
     "retry": "Retry",
     "timeToMake": "Time to make",
     "breakfast": "Breakfast",
-    "lunch": "Lunch", 
+    "lunch": "Lunch",
     "dinner": "Dinner",
     "snack": "Snack",
     "recipe": "Recipe",
@@ -95,4 +97,4 @@
     "hoursFormat": "{{hours}}h",
     "hoursMinutesFormat": "{{hours}}h {{minutes}}min"
   }
-} 
+}

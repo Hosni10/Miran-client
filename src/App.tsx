@@ -15,6 +15,8 @@ import { RecipesList } from "./pages/RecipesList";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import PrimeSubscribersPage from "./pages/PrimeSubscribersPage";
+import { UnitsPage } from "./pages/UnitsPage";
+import { SecondaryFoodPage } from "./pages/SecondaryFoodPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider, useToast } from "./components/ui/ToastContainer";
@@ -67,6 +69,8 @@ function AppContent() {
             <Route path="dashboard" element={<Overview />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="food" element={<FoodListScreen />} />
+            <Route path="units" element={<UnitsPage />} />
+            <Route path="secondary-food" element={<SecondaryFoodPage />} />
             <Route path="recipes" element={<RecipesList />} />
             <Route path="workouts" element={<Workouts />} />
             <Route path="programs" element={<Programs />} />

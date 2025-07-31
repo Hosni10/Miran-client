@@ -2,7 +2,9 @@
   "nav": {
     "overview": "نظرة عامة",
     "users": "المستخدمين",
-    "nutrition": "الطعام", 
+    "nutrition": "الطعام",
+    "units": "الوحدات",
+    "secondaryFood": "الطعام الثانوي",
     "recipes": "الوصفات",
     "workouts": "التمارين",
     "programs": "البرامج",
@@ -95,4 +97,4 @@
     "hoursFormat": "{{hours}} ساعة",
     "hoursMinutesFormat": "{{hours}} ساعة {{minutes}} دقيقة"
   }
-} 
+}
