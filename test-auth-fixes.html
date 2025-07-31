@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth & Image Loading Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 4px;
+        }
+        .button:hover { background: #2563eb; }
+        .success { color: #059669; font-weight: 600; }
+        .error { color: #dc2626; font-weight: 600; }
+        .info { color: #0891b2; }
+        pre { background: #f1f5f9; padding: 12px; border-radius: 4px; overflow-x: auto; }
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .food-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .food-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #f1f5f9;
+        }
+        .food-title {
+            font-weight: 600;
+            margin: 8px 0 4px 0;
+            color: #1e293b;
+        }
+        .food-details {
+            font-size: 14px;
+            color: #64748b;
+        }
+        .image-status {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+        .image-loaded { background: #dcfce7; color: #166534; }
+        .image-failed { background: #fef2f2; color: #dc2626; }
+        .image-placeholder { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Auth & Image Loading Test</h1>
+    
+    <div class="section">
+        <h2>🔐 Authentication Status</h2>
+        <div id="authStatus">Checking...</div>
+        <div style="margin-top: 10px;">
+            <button class="button" onclick="testLogin()">🔑 Test Login</button>
+            <button class="button" onclick="checkToken()">🎫 Check Token</button>
+            <button class="button" onclick="clearAuth()">🗑️ Clear Auth</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🍎 Food API & Images Test</h2>
+        <div id="foodStatus">Ready to test...</div>
+        <div style="margin-top: 10px;">
+            <button class="button" onclick="testFoodAPI()">🍽️ Load Food Items</button>
+            <button class="button" onclick="testImageFallbacks()">🖼️ Test Image Fallbacks</button>
+            <button class="button" onclick="clearFoodData()">🗑️ Clear Results</button>
+        </div>
+        <div id="foodResults"></div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Debug Info</h2>
+        <pre id="debugInfo">Debug information will appear here...</pre>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let authToken = null;
+
+        function log(message, type = 'info') {
+            const debugInfo = document.getElementById('debugInfo');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            debugInfo.textContent += logEntry;
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+            
+            if (type === 'error') {
+                console.error(message);
+            } else {
+                console.log(message);
+            }
+        }
+
+        function updateAuthStatus(status, isSuccess = true) {
+            const authStatus = document.getElementById('authStatus');
+            authStatus.innerHTML = `<span class="${isSuccess ? 'success' : 'error'}">${status}</span>`;
+        }
+
+        function updateFoodStatus(status, isSuccess = true) {
+            const foodStatus = document.getElementById('foodStatus');
+            foodStatus.innerHTML = `<span class="${isSuccess ? 'success' : 'error'}">${status}</span>`;
+        }
+
+        async function checkToken() {
+            try {
+                // Check localStorage for token
+                const storedToken = localStorage.getItem('userTokenSaved');
+                if (storedToken) {
+                    authToken = storedToken;
+                    updateAuthStatus(`✅ Token found: ${storedToken.substring(0, 20)}...`);
+                    log(`Token retrieved: ${storedToken.substring(0, 50)}...`);
+                } else {
+                    updateAuthStatus('❌ No token found', false);
+                    log('No authentication token found in localStorage');
+                }
+            } catch (error) {
+                updateAuthStatus(`❌ Error checking token: ${error.message}`, false);
+                log(`Error checking token: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            try {
+                updateAuthStatus('🔄 Logging in...');
+                log('Attempting login...');
+                
+                const response = await fetch(`${API_BASE}/user/trainer-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'trainer@miranapp.com',
+                        password: 'password123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access;
+                    localStorage.setItem('userTokenSaved', authToken);
+                    
+                    updateAuthStatus(`✅ Login successful! Token: ${authToken.substring(0, 20)}...`);
+                    log(`Login successful. Token stored: ${authToken.substring(0, 50)}...`);
+                } else {
+                    const errorText = await response.text();
+                    updateAuthStatus(`❌ Login failed: ${response.status}`, false);
+                    log(`Login failed: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                updateAuthStatus(`❌ Login error: ${error.message}`, false);
+                log(`Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFoodAPI() {
+            try {
+                updateFoodStatus('🔄 Loading food items...');
+                log('Testing food API...');
+
+                if (!authToken) {
+                    await checkToken();
+                    if (!authToken) {
+                        updateFoodStatus('❌ No auth token available', false);
+                        return;
+                    }
+                }
+
+                const response = await fetch(`${API_BASE}/v1/resources/food_list?limit=50`, {
+                    headers: {
+                        'Authorization': `Token ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateFoodStatus(`✅ Loaded ${data.result?.length || 0} food items`);
+                    log(`Food API success: ${data.result?.length || 0} items loaded`);
+                    displayFoodItems(data.result || []);
+                } else {
+                    const errorText = await response.text();
+                    updateFoodStatus(`❌ Food API failed: ${response.status}`, false);
+                    log(`Food API failed: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                updateFoodStatus(`❌ Food API error: ${error.message}`, false);
+                log(`Food API error: ${error.message}`, 'error');
+            }
+        }
+
+        function displayFoodItems(items) {
+            const resultsDiv = document.getElementById('foodResults');
+            
+            if (!items || items.length === 0) {
+                resultsDiv.innerHTML = '<p class="info">No food items to display</p>';
+                return;
+            }
+
+            const foodGrid = document.createElement('div');
+            foodGrid.className = 'food-grid';
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'food-card';
+                
+                const img = document.createElement('img');
+                img.className = 'food-image';
+                img.alt = item.title;
+                
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'image-status';
+                
+                // Use the same logic as the React component
+                const getImageSrc = (imageUrl) => {
+                    if (!imageUrl) return createPlaceholderSVG();
+                    
+                    if (imageUrl.startsWith('data:') || imageUrl.startsWith('http')) {
+                        return imageUrl;
+                    }
+                    
+                    if (imageUrl.startsWith('/')) {
+                        return `https://testing.miranapp.com${imageUrl}`;
+                    }
+                    
+                    return `/assets/${imageUrl}`;
+                };
+
+                img.src = getImageSrc(item.image);
+                
+                img.onload = () => {
+                    if (img.src.startsWith('data:image/svg+xml')) {
+                        statusSpan.textContent = 'Placeholder';
+                        statusSpan.className = 'image-status image-placeholder';
+                    } else {
+                        statusSpan.textContent = 'Loaded';
+                        statusSpan.className = 'image-status image-loaded';
+                    }
+                    log(`Image loaded for ${item.title}: ${img.src.substring(0, 50)}...`);
+                };
+                
+                img.onerror = () => {
+                    img.src = createPlaceholderSVG();
+                    statusSpan.textContent = 'Failed → Placeholder';
+                    statusSpan.className = 'image-status image-failed';
+                    log(`Image failed for ${item.title}, using placeholder`, 'error');
+                };
+
+                card.innerHTML = `
+                    <div class="food-title">${item.title}</div>
+                    <div class="food-details">${item.secondary_food} • ${item.calories} cal</div>
+                `;
+                card.insertBefore(img, card.firstChild);
+                card.appendChild(statusSpan);
+                
+                foodGrid.appendChild(card);
+            });
+
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(foodGrid);
+        }
+
+        function createPlaceholderSVG() {
+            const svg = `
+                <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="128" height="128" fill="#f3f4f6"/>
+                    <circle cx="64" cy="50" r="20" fill="#e5e7eb"/>
+                    <path d="M44 50 Q64 30 84 50 Q64 70 44 50" fill="#d1d5db"/>
+                    <rect x="54" y="65" width="20" height="8" rx="4" fill="#9ca3af"/>
+                    <rect x="49" y="75" width="30" height="4" rx="2" fill="#6b7280"/>
+                    <rect x="52" y="82" width="24" height="3" rx="1.5" fill="#9ca3af"/>
+                    <text x="64" y="100" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="10">Food</text>
+                </svg>
+            `;
+            return `data:image/svg+xml;base64,${btoa(svg)}`;
+        }
+
+        async function testImageFallbacks() {
+            updateFoodStatus('🔄 Testing image fallbacks...');
+            log('Testing different image URL scenarios...');
+
+            const testImages = [
+                { title: 'Valid Unsplash Image', image: 'https://images.unsplash.com/photo-1606728035253-49e8a23146de?w=400&h=300&fit=crop' },
+                { title: 'Invalid URL', image: 'https://invalid-domain-12345.com/image.jpg' },
+                { title: 'Relative API Path', image: '/media/food/chicken.jpg' },
+                { title: 'Asset Path', image: 'placeholder_food.png' },
+                { title: 'Null Image', image: null },
+                { title: 'Empty String', image: '' }
+            ];
+
+            displayFoodItems(testImages.map((item, index) => ({
+                id: index + 100,
+                title: item.title,
+                secondary_food: `Test case for: ${item.image || 'null/empty'}`,
+                calories: 100,
+                image: item.image
+            })));
+
+            updateFoodStatus('✅ Image fallback test complete');
+            log('Image fallback test scenarios displayed');
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('userTokenSaved');
+            authToken = null;
+            updateAuthStatus('🗑️ Authentication cleared');
+            log('Authentication data cleared');
+        }
+
+        function clearFoodData() {
+            document.getElementById('foodResults').innerHTML = '';
+            updateFoodStatus('🗑️ Food data cleared');
+            log('Food display data cleared');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Auth & Image Test Page loaded');
+            checkToken();
+        });
+    </script>
+</body>
+</html> 

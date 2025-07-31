@@ -1,0 +1,49 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "10"
+  # Environment variables for production
+  VITE_API_URL = "/api"
+  VITE_S3_REGION = "me-central-1"
+  VITE_DEBUG_MODE = "false"
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+# Function settings (disabled since we're using simple redirects)
+[functions]
+  directory = "netlify/functions"
+
+# API proxy redirects to handle CORS issues - explicit HTTP methods
+[[redirects]]
+  from = "/api/v1/*"
+  to = "https://testing.miranapp.com/api/v1/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+  conditions = {Methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]}
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://testing.miranapp.com/api/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+  conditions = {Methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]}
+
+# SPA fallback for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 

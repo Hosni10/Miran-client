@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Sync Fix Test - Miran Dashboard</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        code {
+            background: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Auth Sync Fix Test</h1>
+    <p><strong>Test Date:</strong> <span id="testDate"></span></p>
+
+    <div class="success status">
+        <h3>✅ Issue Fixed:</h3>
+        <p><strong>Problem:</strong> Only Overview tab was visible because AuthContext and AuthStore were not synchronized.</p>
+        <p><strong>Solution:</strong> Updated AuthContext to sync user authentication state with AuthStore for role-based permissions.</p>
+    </div>
+
+    <div class="info status">
+        <h3>🔍 What Was Fixed:</h3>
+        <ul>
+            <li><strong>Mock Login Sync:</strong> Mock login now updates both AuthContext and AuthStore</li>
+            <li><strong>Regular Login Sync:</strong> API login updates both authentication systems</li>
+            <li><strong>Initialization Sync:</strong> Stored credentials are loaded into both systems</li>
+            <li><strong>Logout Sync:</strong> Logout clears both authentication systems</li>
+            <li><strong>Role Mapping:</strong> Proper role mapping between context and store formats</li>
+        </ul>
+    </div>
+
+    <div class="warning status">
+        <h3>⚠️ Expected Behavior Now:</h3>
+        <ul>
+            <li><strong>All Navigation Items:</strong> Should be visible with Admin role</li>
+            <li><strong>Role-Based Access:</strong> Navigation items respect user permissions</li>
+            <li><strong>Consistent State:</strong> Both auth systems stay synchronized</li>
+            <li><strong>Mock Login Button:</strong> Works properly in development mode</li>
+        </ul>
+    </div>
+
+    <h2>🧪 Test Steps</h2>
+    <div class="info status">
+        <ol>
+            <li><strong>Open Dashboard:</strong> Navigate to <code>http://localhost:3000</code></li>
+            <li><strong>Check Sidebar:</strong> All navigation items should be visible</li>
+            <li><strong>Test Mock Login:</strong> Use the blue "Mock Login" button if needed</li>
+            <li><strong>Check Console:</strong> Look for 🔧 debug logs showing both systems are updated</li>
+            <li><strong>Test Navigation:</strong> Click on different tabs (Users, Food, Trainers, etc.)</li>
+            <li><strong>Test Logout:</strong> Verify logout clears both systems</li>
+        </ol>
+    </div>
+
+    <h2>🔧 Debug Information</h2>
+    <div>
+        <button class="test-button" onclick="checkAuthState()">Check Auth State</button>
+        <button class="test-button" onclick="checkLocalStorage()">Check LocalStorage</button>
+        <button class="test-button" onclick="clearAllStorage()">Clear All Storage</button>
+    </div>
+
+    <div id="debugResults"></div>
+
+    <h2>🚨 If Navigation Items Still Missing</h2>
+    <div class="error status">
+        <h4>Troubleshooting:</h4>
+        <ol>
+            <li><strong>Hard Refresh:</strong> Press Ctrl+Shift+R to clear cache</li>
+            <li><strong>Clear Storage:</strong> Use "Clear All Storage" button above</li>
+            <li><strong>Check Console:</strong> Look for authentication errors</li>
+            <li><strong>Restart Dev Server:</strong> Stop and restart <code>npm run dev</code></li>
+            <li><strong>Check Network:</strong> Ensure no API errors in Network tab</li>
+        </ol>
+    </div>
+
+    <h2>🔗 Quick Links</h2>
+    <div>
+        <a href="http://localhost:3000" target="_blank" class="test-button">Open Dashboard</a>
+        <a href="http://localhost:3000/food" target="_blank" class="test-button">Test Food Tab</a>
+        <a href="http://localhost:3000/trainers" target="_blank" class="test-button">Test Trainers Tab</a>
+        <a href="http://localhost:3000/users" target="_blank" class="test-button">Test Users Tab</a>
+    </div>
+
+    <script>
+        // Set test date
+        document.getElementById('testDate').textContent = new Date().toLocaleString();
+
+        function checkAuthState() {
+            const results = document.getElementById('debugResults');
+            
+            // Check what's in localStorage
+            const authToken = localStorage.getItem('userTokenSaved');
+            const authUser = localStorage.getItem('auth_user');
+            const authStorage = localStorage.getItem('auth-storage');
+            
+            results.innerHTML = `
+                <div class="info status">
+                    <h4>Authentication State:</h4>
+                    <pre>AuthContext Token: ${authToken ? 'Present' : 'Missing'}
+AuthContext User: ${authUser ? 'Present' : 'Missing'}
+AuthStore Data: ${authStorage ? 'Present' : 'Missing'}
+
+LocalStorage Keys: ${Object.keys(localStorage).join(', ')}
+
+AuthStore Content: ${authStorage ? JSON.stringify(JSON.parse(authStorage), null, 2) : 'Not found'}</pre>
+                </div>
+            `;
+        }
+
+        function checkLocalStorage() {
+            const results = document.getElementById('debugResults');
+            const allData = {};
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                allData[key] = localStorage.getItem(key);
+            }
+            
+            results.innerHTML = `
+                <div class="info status">
+                    <h4>Complete LocalStorage Contents:</h4>
+                    <pre>${JSON.stringify(allData, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        function clearAllStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            const results = document.getElementById('debugResults');
+            results.innerHTML = `
+                <div class="success status">
+                    <h4>Storage Cleared:</h4>
+                    <p>All localStorage and sessionStorage data has been cleared.</p>
+                    <p><strong>Next:</strong> Refresh the dashboard to test clean state behavior.</p>
+                </div>
+            `;
+        }
+
+        // Auto-check auth state on page load
+        setTimeout(checkAuthState, 1000);
+    </script>
+</body>
+</html> 
