@@ -179,6 +179,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       flex flex-col 
       shadow-soft
       relative
+      h-screen
+      fixed top-0 left-0 z-40
     `}
     >
       {/* Header */}

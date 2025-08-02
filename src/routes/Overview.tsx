@@ -386,8 +386,8 @@ export default function Overview() {
                     <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg mx-auto mb-3 group-hover:scale-110 transition-transform">
                       <Utensils className="w-7 h-7" />
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div className="space-y-1 overflow-hidden">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white text-clip overflow-hidden">
                         {displayValues.totalFoods}
                       </p>
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">

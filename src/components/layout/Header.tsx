@@ -174,35 +174,30 @@ export default function Header({ onMenuClick }: HeaderProps) {
   ];
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-soft">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center space-x-4">
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-soft w-full">
+      <div className="flex items-center justify-between px-2 sm:px-4 py-2 min-h-[56px]">
+        {/* Left: Menu & Search */}
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Open menu"
           >
-            <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <Menu className="w-6 h-6 text-gray-600 dark:text-gray-400" />
           </button>
-
-          <GlobalSearch />
+          <div className="hidden sm:block">
+            <GlobalSearch />
+          </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          {/* Development Mock Login Button */}
-          {import.meta.env.DEV && !user && (
-            <button
-              onClick={handleMockLogin}
-              className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-              title="Mock login for development"
-            >
-              Mock Login
-            </button>
-          )}
-
+        {/* Right: Actions */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-3">
+          {/* Theme toggle */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label="Toggle theme"
           >
             {isDark ? (
               <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-yellow-500 transition-colors" />
@@ -211,19 +206,23 @@ export default function Header({ onMenuClick }: HeaderProps) {
             )}
           </button>
 
-          <LanguageToggle />
+          {/* Language toggle (hidden on xs) */}
+          <div>
+            <LanguageToggle />
+          </div>
 
+          {/* Notifications */}
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative group"
+              aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-large border border-gray-200 dark:border-gray-700 z-50 animate-scale-in">
+              <div className="absolute right-0 mt-2 w-64 sm:w-80 bg-white dark:bg-gray-800 rounded-lg shadow-large border border-gray-200 dark:border-gray-700 z-50 animate-scale-in">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Notifications
@@ -266,32 +265,25 @@ export default function Header({ onMenuClick }: HeaderProps) {
             )}
           </div>
 
+          {/* Profile avatar (popover on mobile) */}
           <div className="relative">
             <button
               onClick={() => setShowProfile(!showProfile)}
-              className="flex items-center ltr:space-x-2 rtl:space-x-reverse p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              className="flex items-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              aria-label="Profile"
             >
               <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <div className="hidden md:block text-left rtl:text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {user?.name || "User"}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {user?.email || "user@example.com"}
-                </p>
-              </div>
             </button>
-
             {showProfile && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-large border border-gray-200 dark:border-gray-700 z-50 animate-scale-in">
+              <div className="absolute right-0 mt-2 w-44 sm:w-56 bg-white dark:bg-gray-800 rounded-lg shadow-large border border-gray-200 dark:border-gray-700 z-50 animate-scale-in">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center ltr:space-x-3 rtl:space-x-reverse">
                     <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
                       <User className="w-5 h-5 text-white" />
                     </div>
-                    <div>
+                    <div className="hidden sm:block">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {user?.name || "User"}
                       </p>
@@ -304,19 +296,30 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 <div className="py-2">
                   <button className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <Settings className="w-4 h-4 ltr:mr-3 rtl:ml-3" />
-                    Account Settings
+                    <span className="hidden sm:inline">Account Settings</span>
                   </button>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <LogOut className="w-4 h-4 ltr:mr-3 rtl:ml-3" />
-                    Sign Out
+                    <span className="hidden sm:inline">Sign Out</span>
                   </button>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Mock login (dev only, hidden on xs) */}
+          {import.meta.env.DEV && !user && (
+            <button
+              onClick={handleMockLogin}
+              className="hidden xs:block px-2 sm:px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              title="Mock login for development"
+            >
+              Mock Login
+            </button>
+          )}
         </div>
       </div>
     </header>
