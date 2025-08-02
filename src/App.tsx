@@ -47,7 +47,6 @@ function AppContent() {
     });
   }, [showError]);
 
-  console.log("🔧 App component rendered");
 
   return (
     <AuthProvider>
@@ -68,9 +67,10 @@ function AppContent() {
             <Route index element={<Overview />} />
             <Route path="dashboard" element={<Overview />} />
             <Route path="users" element={<UsersPage />} />
-            <Route path="food" element={<FoodListScreen />} />
-            <Route path="units" element={<UnitsPage />} />
-            <Route path="secondary-food" element={<SecondaryFoodPage />} />
+            <Route path="food" element={<FoodListScreen />}>
+              <Route path="units" element={<UnitsPage />} />
+              <Route path="secondary-food" element={<SecondaryFoodPage />} />
+            </Route>
             <Route path="recipes" element={<RecipesList />} />
             <Route path="workouts" element={<Workouts />} />
             <Route path="programs" element={<Programs />} />

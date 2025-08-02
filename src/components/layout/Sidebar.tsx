@@ -232,7 +232,11 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
+          let isActive = location.pathname === item.href;
+          // For food section, also active on nested routes
+          if (item.href === "/food" && location.pathname.startsWith("/food/")) {
+            isActive = true;
+          }
 
           // Render navigation item with proper fallback
           const NavigationItem = () => (

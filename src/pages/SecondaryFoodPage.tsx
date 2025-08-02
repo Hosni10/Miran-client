@@ -9,6 +9,7 @@ import { useAuthStore } from "../store/AuthStore";
 import PaginationButtons from "../components/PaginationButtons";
 import { DEFAULT_LIMIT } from "../constants/endpoints";
 import type { SecondaryFood } from "../types/secondaryFood";
+import { buildImageUrl } from "../utils/imageUrl";
 
 // Mock pagination for secondary food since the API doesn't support it yet
 const mockPaginatedSecondaryFood = (data: SecondaryFood[], page: number, limit: number) => {
@@ -230,19 +231,19 @@ export const SecondaryFoodPage: React.FC = () => {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-soft border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200"
               >
                 <div className="flex items-center justify-center mb-4">
-                  {item.icon && (
-                    <div className="ml-4">
-                      <img
-                        src={item.icon}
-                        alt={item.title}
-                        className="w-12 h-12 rounded-lg object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
+                  <div className="ml-4">
+                    <img
+                      src={item.icon ? item.icon : buildImageUrl(null)}
+                      alt={item.title}
+                      className="w-12 h-12 rounded-lg object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (!item.icon) {
+                          target.src = buildImageUrl(null);
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
